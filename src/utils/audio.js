@@ -1,19 +1,92 @@
-// Web Speech API for text-to-speech
-export function speak(text, enabled = true) {
-  if (!enabled || !window.speechSynthesis) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.85;
-  utterance.pitch = 1.1;
-  utterance.lang = 'en-SG';
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}
+import audioMap from './audioMap';
 
-// Simple tone generation using AudioContext
 let audioCtx = null;
 function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
+}
+
+export function getAudioUrl(text) {
+  if (audioMap[text]) {
+    return audioMap[text];
+  }
+  return null;
+}
+
+const audioCache = {};
+
+export function preloadNarration(text) {
+  const url = getAudioUrl(text);
+  if (url && !audioCache[url]) {
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    audioCache[url] = audio;
+  }
+}
+
+let currentAudio = null;
+
+export function speak(text, enabled = true) {
+  if (!enabled) return;
+  
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+  
+  const url = getAudioUrl(text);
+  if (url) {
+    let audio = audioCache[url];
+    if (!audio) {
+      audio = new Audio(url);
+      audioCache[url] = audio;
+    }
+    currentAudio = audio;
+    audio.play().catch(e => console.error("Audio play failed:", e));
+  } else {
+    console.warn("No audio mapped for text:", text);
+  }
+}
+
+export function narrate(segments, enabled = true) {
+  if (!enabled || !segments || segments.length === 0) return;
+  let idx = 0;
+  
+  function playNext() {
+    if (idx >= segments.length) return;
+    
+    // Eagerly preload next segment
+    if (idx + 1 < segments.length) {
+      preloadNarration(segments[idx + 1].text);
+    }
+    
+    const segment = segments[idx];
+    const url = getAudioUrl(segment.text);
+    
+    if (url) {
+      let audio = audioCache[url];
+      if (!audio) {
+        audio = new Audio(url);
+        audioCache[url] = audio;
+      }
+      currentAudio = audio;
+      audio.onended = () => {
+        idx++;
+        playNext();
+      };
+      audio.play().catch(e => {
+        console.error("Audio play failed:", e);
+        idx++;
+        playNext();
+      });
+    } else {
+       console.warn("No audio mapped for text:", segment.text);
+       idx++;
+       playNext();
+    }
+  }
+  
+  playNext();
 }
 
 export function playTone(frequency, duration = 200) {
