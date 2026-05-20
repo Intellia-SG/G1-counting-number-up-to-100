@@ -2,39 +2,31 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function clean() {
+  const audioMapModule = await import('../src/utils/audioMap.js');
+  const audioMap = audioMapModule.audioMap || audioMapModule.default || {};
+  const validFiles = new Set(Object.values(audioMap).map(p => path.basename(p)));
   const audioDir = path.join(__dirname, '../public/assets/audio');
-  const mapFile = path.join(__dirname, '../src/utils/audioMap.js');
-  
-  if (!fs.existsSync(mapFile) || !fs.existsSync(audioDir)) {
-    console.log("No audio map or audio directory found.");
+
+  if (!fs.existsSync(audioDir)) {
+    console.log('No audio directory found.');
     return;
   }
-  
-  const mapContent = fs.readFileSync(mapFile, 'utf8');
-  const jsonStr = mapContent.substring(mapContent.indexOf('{'), mapContent.lastIndexOf('}') + 1);
-  let audioMap = {};
-  try {
-    audioMap = JSON.parse(jsonStr);
-  } catch (e) {
-    console.error("Could not parse audioMap.js");
-    return;
-  }
-  
-  const validFiles = Object.values(audioMap).map(p => path.basename(p));
-  const existingFiles = fs.readdirSync(audioDir).filter(f => f.endsWith('.mp3'));
-  
-  for (const file of existingFiles) {
-    if (!validFiles.includes(file)) {
-      console.log(`Removing orphaned file: ${file}`);
+
+  const files = fs.readdirSync(audioDir).filter(f => f.endsWith('.mp3'));
+  let removed = 0;
+
+  for (const file of files) {
+    if (!validFiles.has(file)) {
       fs.unlinkSync(path.join(audioDir, file));
+      console.log(`Removed orphan: ${file}`);
+      removed++;
     }
   }
-  
-  console.log("Audio cleanup complete.");
+
+  console.log(`\n✓ Cleanup complete. Removed ${removed} orphaned file(s). ${files.length - removed} valid file(s) remain.`);
 }
 
 clean();

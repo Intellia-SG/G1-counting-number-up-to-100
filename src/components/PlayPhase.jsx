@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { generateQuestionBank } from '../utils/questionBank';
-import { speak, sounds } from '../utils/audio';
+import { speak, narrate, stopNarration, sounds } from '../utils/audio';
+import { playWorldIntro, playReadQuestion } from '../utils/narration';
 import QuestionRenderer from './QuestionRenderer';
 
 const WORLDS = [
@@ -24,8 +25,8 @@ function calcStars(correct, total) {
 
 export default function PlayPhase({ onComplete, audioEnabled }) {
   const allQuestions = useMemo(() => generateQuestionBank(), []);
-  const [currentWorld, setCurrentWorld] = useState(-1); // -1 = world map
-  const [worldResults, setWorldResults] = useState({}); // { 0: {score,total,stars}, ... }
+  const [currentWorld, setCurrentWorld] = useState(-1);
+  const [worldResults, setWorldResults] = useState({});
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [totalXP, setTotalXP] = useState(0);
@@ -38,7 +39,6 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   const [wordCorrect, setWordCorrect] = useState(0);
   const [worldComplete, setWorldComplete] = useState(false);
 
-  // Filter questions for current world difficulty
   const worldQuestions = useMemo(() => {
     if (currentWorld < 0) return [];
     const w = WORLDS[currentWorld];
@@ -47,6 +47,14 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   }, [currentWorld, allQuestions]);
 
   const q = worldQuestions[qIndex];
+
+  // Narrate question text (NOT title) when question changes
+  useEffect(() => {
+    if (q && audioEnabled && currentWorld >= 0 && !worldComplete) {
+      narrate(playReadQuestion(q.questionText), true);
+    }
+    return () => stopNarration();
+  }, [q, audioEnabled, currentWorld, worldComplete]);
 
   const startWorld = useCallback((worldId) => {
     setCurrentWorld(worldId);
@@ -57,7 +65,7 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
     setWorldComplete(false);
     setFeedback(null);
     setAnswered(false);
-    if (audioEnabled) speak(`Welcome to ${WORLDS[worldId].name}!`, true);
+    if (audioEnabled) narrate(playWorldIntro(WORLDS[worldId].name), true);
   }, [audioEnabled]);
 
   const finishWorld = useCallback(() => {
@@ -69,6 +77,7 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   }, [currentWorld, score]);
 
   const backToMap = useCallback(() => {
+    stopNarration();
     setCurrentWorld(-1);
     setWorldComplete(false);
     setFeedback(null);
@@ -160,7 +169,6 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
             );
           })}
         </div>
-        {/* Path connectors */}
         <div className="world-path">
           {WORLDS.slice(0, -1).map((_, i) => (
             <div key={i} className={`world-connector ${worldResults[i] ? 'active' : ''}`} />
@@ -216,11 +224,9 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
 
   return (
     <div className="play-phase">
-      {/* World badge */}
       <div className="play-world-badge" style={{ background: w.color }}>
         {w.icon} {w.name}
       </div>
-      {/* HUD */}
       <div className="hud">
         <div className="hud-item">⭐ {totalXP}</div>
         <div className="hearts">
@@ -230,7 +236,6 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
         </div>
         <div className={`hud-item ${streak >= 5 ? 'streak-fire' : ''}`}>🔥 {streak}x</div>
       </div>
-      {/* Progress */}
       <div style={{ width: '100%', maxWidth: 700, marginBottom: 16 }}>
         <div className="progress-bar-container">
           <div className="progress-bar-label">
@@ -242,13 +247,10 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
           </div>
         </div>
       </div>
-      {/* Question */}
       <div className="question-card" style={{ animation: 'slideUp 0.3s ease' }}>
         <QuestionRenderer question={q} onAnswer={handleAnswer} disabled={answered} />
       </div>
-      {/* XP popup */}
       {xpPopup && <div className="xp-popup">{xpPopup}</div>}
-      {/* Feedback */}
       {feedback && (
         <div className="feedback-overlay">
           <div className={`feedback-content ${feedback.type}`}>
