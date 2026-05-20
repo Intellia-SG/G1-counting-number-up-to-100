@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { narrate, stopNarration } from '../utils/audio';
 import { wonderNarration, wonderDiscoverNarration } from '../utils/narration';
 
@@ -39,6 +39,7 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
   const [wonder] = useState(() => WONDER_QUESTIONS[Math.floor(Math.random() * WONDER_QUESTIONS.length)]);
   const [stage, setStage] = useState(0);
   const [particles, setParticles] = useState([]);
+  const narrationRef = useRef(null);
 
   useEffect(() => {
     const p = Array.from({ length: 20 }, (_, i) => ({
@@ -54,7 +55,7 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
   }, [wonder]);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setStage(1), 800);
+    const t1 = setTimeout(() => setStage(1), 100);
     const t2 = setTimeout(() => setStage(2), 2000);
     return () => { clearTimeout(t1); clearTimeout(t2); stopNarration(); };
   }, []);
@@ -62,13 +63,18 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
   // Narrate question + subtext (NOT the emoji or title)
   useEffect(() => {
     if (stage === 1 && audioEnabled) {
-      narrate(wonderNarration(wonder.question, wonder.subtext), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(wonderNarration(wonder.question, wonder.subtext), true);
     }
+    return () => { narrationRef.current?.cancel(); };
   }, [stage, wonder.question, wonder.subtext, audioEnabled]);
 
   const handleDiscover = useCallback(() => {
+    narrationRef.current?.cancel();
     stopNarration();
-    if (audioEnabled) narrate(wonderDiscoverNarration(), true);
+    if (audioEnabled) {
+      narrationRef.current = narrate(wonderDiscoverNarration(), true);
+    }
     setTimeout(() => onComplete(), 600);
   }, [onComplete, audioEnabled]);
 
@@ -124,3 +130,4 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
     </div>
   );
 }
+

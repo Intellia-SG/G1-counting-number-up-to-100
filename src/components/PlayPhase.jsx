@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { generateQuestionBank } from '../utils/questionBank';
 import { speak, narrate, stopNarration, sounds } from '../utils/audio';
 import { playWorldIntro, playReadQuestion } from '../utils/narration';
@@ -38,6 +38,8 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   const [xpPopup, setXpPopup] = useState(null);
   const [wordCorrect, setWordCorrect] = useState(0);
   const [worldComplete, setWorldComplete] = useState(false);
+  
+  const narrationRef = useRef(null);
 
   const worldQuestions = useMemo(() => {
     if (currentWorld < 0) return [];
@@ -51,9 +53,10 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   // Narrate question text (NOT title) when question changes
   useEffect(() => {
     if (q && audioEnabled && currentWorld >= 0 && !worldComplete) {
-      narrate(playReadQuestion(q.questionText), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(playReadQuestion(q.questionText), true);
     }
-    return () => stopNarration();
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [q, audioEnabled, currentWorld, worldComplete]);
 
   const startWorld = useCallback((worldId) => {
@@ -65,7 +68,10 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
     setWorldComplete(false);
     setFeedback(null);
     setAnswered(false);
-    if (audioEnabled) narrate(playWorldIntro(WORLDS[worldId].name), true);
+    if (audioEnabled) {
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(playWorldIntro(WORLDS[worldId].name), true);
+    }
   }, [audioEnabled]);
 
   const finishWorld = useCallback(() => {
@@ -77,6 +83,7 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
   }, [currentWorld, score]);
 
   const backToMap = useCallback(() => {
+    narrationRef.current?.cancel();
     stopNarration();
     setCurrentWorld(-1);
     setWorldComplete(false);
@@ -263,3 +270,4 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
     </div>
   );
 }
+

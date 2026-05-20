@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { numberToWord } from '../utils/numberWords';
 import { speak, narrate, stopNarration, sounds } from '../utils/audio';
 import { reflectQuestionNarration, reflectCorrectNarration, reflectConfidenceNarration, reflectCertificateNarration } from '../utils/narration';
@@ -36,6 +36,8 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
   const [confidence, setConfidence] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiPieces, setConfettiPieces] = useState([]);
+  
+  const narrationRef = useRef(null);
 
   const { score = 0, totalAnswered = 0, xp = 0, maxStreak = 0, worldResults = {} } = stats || {};
   const pct = totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0;
@@ -55,24 +57,37 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
   // Narrate question text when it changes (NOT the "Reflect" title)
   useEffect(() => {
     if (step === 0 && audioEnabled) {
-      narrate(reflectQuestionNarration(REFLECT_QUESTIONS[teachIdx].q), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(reflectQuestionNarration(REFLECT_QUESTIONS[teachIdx].q), true);
     }
-    return () => stopNarration();
+    return () => { narrationRef.current?.cancel(); };
   }, [step, teachIdx, audioEnabled]);
 
   // Narrate confidence step
   useEffect(() => {
     if (step === 2 && audioEnabled) {
-      narrate(reflectConfidenceNarration(), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(reflectConfidenceNarration(), true);
     }
+    return () => { narrationRef.current?.cancel(); };
   }, [step, audioEnabled]);
 
   // Narrate certificate
   useEffect(() => {
     if (step === 3 && audioEnabled) {
-      narrate(reflectCertificateNarration(pct), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(reflectCertificateNarration(pct), true);
     }
+    return () => { narrationRef.current?.cancel(); };
   }, [step, pct, audioEnabled]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      narrationRef.current?.cancel();
+      stopNarration();
+    };
+  }, []);
 
   const handleTeachAnswer = useCallback((option) => {
     if (teachAnswered) return;
@@ -80,7 +95,10 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
     if (option.correct) {
       setTeachCorrect(c => c + 1);
       sounds.correct();
-      if (audioEnabled) narrate(reflectCorrectNarration(), true);
+      if (audioEnabled) {
+        narrationRef.current?.cancel();
+        narrationRef.current = narrate(reflectCorrectNarration(), true);
+      }
     } else {
       sounds.wrong();
     }

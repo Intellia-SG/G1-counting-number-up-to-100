@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { narrate, stopNarration } from '../utils/audio';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { narrate, stopNarration, preloadNarration } from '../utils/audio';
 import { getStoryNarration } from '../utils/narration';
 
 const STORY_SLIDES = [
@@ -38,27 +38,39 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
   const [anim, setAnim] = useState(false);
   const [textVis, setTextVis] = useState(false);
   const [hlVis, setHlVis] = useState(false);
+  const narrationRef = useRef(null);
   const s = STORY_SLIDES[slide];
   const isLast = slide === STORY_SLIDES.length - 1;
   const pct = ((slide + 1) / STORY_SLIDES.length) * 100;
 
   useEffect(() => {
+    if (audioEnabled) {
+      preloadNarration(getStoryNarration(slide));
+      if (slide + 1 < STORY_SLIDES.length) {
+        preloadNarration(getStoryNarration(slide + 1));
+      }
+    }
+  }, [slide, audioEnabled]);
+
+  useEffect(() => {
     setTextVis(false); setHlVis(false);
-    const t1 = setTimeout(() => setTextVis(true), 400);
-    const t2 = setTimeout(() => setHlVis(true), 1800);
+    const t1 = setTimeout(() => setTextVis(true), 100);
+    const t2 = setTimeout(() => setHlVis(true), 800);
     return () => { clearTimeout(t1); clearTimeout(t2); stopNarration(); };
   }, [slide]);
 
   // Narrate paragraph + mascot text (NOT the title)
   useEffect(() => {
     if (textVis && audioEnabled) {
-      const segments = getStoryNarration(slide);
-      narrate(segments, true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(getStoryNarration(slide), true);
     }
+    return () => { narrationRef.current?.cancel(); };
   }, [textVis, slide, audioEnabled]);
 
   const goNext = useCallback(() => {
     if (anim) return;
+    narrationRef.current?.cancel();
     stopNarration();
     setAnim(true);
     setTimeout(() => { isLast ? onComplete() : setSlide(i => i + 1); setAnim(false); }, 400);
@@ -66,6 +78,7 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
 
   const goPrev = useCallback(() => {
     if (anim || slide === 0) return;
+    narrationRef.current?.cancel();
     stopNarration();
     setAnim(true);
     setTimeout(() => { setSlide(i => i - 1); setAnim(false); }, 400);
@@ -106,3 +119,4 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
     </div>
   );
 }
+

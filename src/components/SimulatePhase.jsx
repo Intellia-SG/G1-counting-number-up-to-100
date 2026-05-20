@@ -13,11 +13,15 @@ const STATIONS = [
 /* Station 1: Ten-Frame 0-10 */
 function Station1({ audioEnabled, onNext }) {
   const [filled, setFilled] = useState(0);
+  const narrationRef = useRef(null);
 
   // Narrate instruction paragraph on mount (NOT the title)
   useEffect(() => {
-    if (audioEnabled) narrate(simulateStation1Intro(), true);
-    return () => stopNarration();
+    if (audioEnabled) {
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(simulateStation1Intro(), true);
+    }
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [audioEnabled]);
 
   const toggle = (i) => {
@@ -59,10 +63,14 @@ function Station1({ audioEnabled, onNext }) {
 function Station2({ audioEnabled, onNext }) {
   const [ones, setOnes] = useState(1);
   const num = 10 + ones;
+  const narrationRef = useRef(null);
 
   useEffect(() => {
-    if (audioEnabled) narrate(simulateStation2Intro(), true);
-    return () => stopNarration();
+    if (audioEnabled) {
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(simulateStation2Intro(), true);
+    }
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [audioEnabled]);
 
   return (
@@ -109,10 +117,14 @@ function Station3({ audioEnabled, onNext }) {
   const [skipBy, setSkipBy] = useState(2);
   const [highlighted, setHighlighted] = useState([]);
   const timeoutsRef = useRef([]);
+  const narrationRef = useRef(null);
 
   useEffect(() => {
-    if (audioEnabled) narrate(simulateStation3Intro(), true);
-    return () => stopNarration();
+    if (audioEnabled) {
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(simulateStation3Intro(), true);
+    }
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [audioEnabled]);
 
   const generateSequence = (by) => {
@@ -124,7 +136,8 @@ function Station3({ audioEnabled, onNext }) {
   const handleSkipChange = (by) => {
     timeoutsRef.current.forEach(id => clearTimeout(id));
     timeoutsRef.current = [];
-    window.speechSynthesis && window.speechSynthesis.cancel();
+    narrationRef.current?.cancel();
+    stopNarration();
 
     setSkipBy(by);
     setHighlighted([]);
@@ -183,10 +196,14 @@ function Station3({ audioEnabled, onNext }) {
 /* Station 4: Hundred Chart Explorer */
 function Station4({ audioEnabled, onComplete }) {
   const [selected, setSelected] = useState(null);
+  const narrationRef = useRef(null);
 
   useEffect(() => {
-    if (audioEnabled) narrate(simulateStation4Intro(), true);
-    return () => stopNarration();
+    if (audioEnabled) {
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(simulateStation4Intro(), true);
+    }
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [audioEnabled]);
 
   const handleClick = (n) => {
@@ -256,3 +273,4 @@ export default function SimulatePhase({ onComplete, audioEnabled }) {
     </div>
   );
 }
+

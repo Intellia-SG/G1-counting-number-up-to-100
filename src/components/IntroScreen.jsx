@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { narrate, stopNarration } from '../utils/audio';
 import { introNarration } from '../utils/narration';
 
@@ -11,11 +11,14 @@ const JOURNEY_PHASES = [
 ];
 
 export default function IntroScreen({ onStart, audioEnabled }) {
+  const narrationRef = useRef(null);
+
   useEffect(() => {
     if (audioEnabled) {
-      narrate(introNarration(), true);
+      narrationRef.current?.cancel();
+      narrationRef.current = narrate(introNarration(), true);
     }
-    return () => stopNarration();
+    return () => { narrationRef.current?.cancel(); stopNarration(); };
   }, [audioEnabled]);
 
   return (
@@ -77,3 +80,4 @@ export default function IntroScreen({ onStart, audioEnabled }) {
     </div>
   );
 }
+
