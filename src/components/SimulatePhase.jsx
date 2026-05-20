@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { numberToWord } from '../utils/numberWords';
-import { speak } from '../utils/audio';
+import { speak, narrate, stopNarration, sounds } from '../utils/audio';
+import { simulateStation1Intro, simulateStation2Intro, simulateStation3Intro, simulateStation4Intro } from '../utils/narration';
 
 const STATIONS = [
   { id: 0, title: 'Count 0–10', subtitle: 'Ten-Frame Counting', icon: '🔢' },
@@ -12,6 +13,13 @@ const STATIONS = [
 /* Station 1: Ten-Frame 0-10 */
 function Station1({ audioEnabled, onNext }) {
   const [filled, setFilled] = useState(0);
+
+  // Narrate instruction paragraph on mount (NOT the title)
+  useEffect(() => {
+    if (audioEnabled) narrate(simulateStation1Intro(), true);
+    return () => stopNarration();
+  }, [audioEnabled]);
+
   const toggle = (i) => {
     const next = i < filled ? i : i + 1;
     setFilled(Math.min(10, Math.max(0, next)));
@@ -51,6 +59,12 @@ function Station1({ audioEnabled, onNext }) {
 function Station2({ audioEnabled, onNext }) {
   const [ones, setOnes] = useState(1);
   const num = 10 + ones;
+
+  useEffect(() => {
+    if (audioEnabled) narrate(simulateStation2Intro(), true);
+    return () => stopNarration();
+  }, [audioEnabled]);
+
   return (
     <div style={{ textAlign: 'center' }}>
       <div className="station-header"><h2>🔟 Counting 11 to 20</h2></div>
@@ -96,6 +110,11 @@ function Station3({ audioEnabled, onNext }) {
   const [highlighted, setHighlighted] = useState([]);
   const timeoutsRef = useRef([]);
 
+  useEffect(() => {
+    if (audioEnabled) narrate(simulateStation3Intro(), true);
+    return () => stopNarration();
+  }, [audioEnabled]);
+
   const generateSequence = (by) => {
     const seq = [];
     for (let i = by; i <= 100; i += by) seq.push(i);
@@ -103,7 +122,6 @@ function Station3({ audioEnabled, onNext }) {
   };
 
   const handleSkipChange = (by) => {
-    // Cancel all pending timeouts from previous animation
     timeoutsRef.current.forEach(id => clearTimeout(id));
     timeoutsRef.current = [];
     window.speechSynthesis && window.speechSynthesis.cancel();
@@ -113,7 +131,6 @@ function Station3({ audioEnabled, onNext }) {
 
     const seq = generateSequence(by);
     const newTimeouts = [];
-    // Animate counting with staggered highlights
     seq.forEach((n, i) => {
       const id = setTimeout(() => {
         setHighlighted(prev => [...prev, n]);
@@ -167,6 +184,11 @@ function Station3({ audioEnabled, onNext }) {
 function Station4({ audioEnabled, onComplete }) {
   const [selected, setSelected] = useState(null);
 
+  useEffect(() => {
+    if (audioEnabled) narrate(simulateStation4Intro(), true);
+    return () => stopNarration();
+  }, [audioEnabled]);
+
   const handleClick = (n) => {
     setSelected(n);
     speak(numberToWord(n), audioEnabled);
@@ -209,7 +231,7 @@ function Station4({ audioEnabled, onComplete }) {
 
 export default function SimulatePhase({ onComplete, audioEnabled }) {
   const [station, setStation] = useState(0);
-  const nextStation = useCallback(() => { if (station < 3) setStation(s => s + 1); }, [station]);
+  const nextStation = useCallback(() => { stopNarration(); if (station < 3) setStation(s => s + 1); }, [station]);
 
   return (
     <div className="simulate-phase">

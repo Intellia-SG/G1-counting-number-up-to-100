@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { speak } from '../utils/audio';
+import { narrate, stopNarration } from '../utils/audio';
+import { getStoryNarration } from '../utils/narration';
 
 const STORY_SLIDES = [
   {
@@ -45,21 +46,27 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
     setTextVis(false); setHlVis(false);
     const t1 = setTimeout(() => setTextVis(true), 400);
     const t2 = setTimeout(() => setHlVis(true), 1800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t1); clearTimeout(t2); stopNarration(); };
   }, [slide]);
 
+  // Narrate paragraph + mascot text (NOT the title)
   useEffect(() => {
-    if (textVis && audioEnabled) speak(s.text, true);
-  }, [textVis, s.text, audioEnabled]);
+    if (textVis && audioEnabled) {
+      const segments = getStoryNarration(slide);
+      narrate(segments, true);
+    }
+  }, [textVis, slide, audioEnabled]);
 
   const goNext = useCallback(() => {
     if (anim) return;
+    stopNarration();
     setAnim(true);
     setTimeout(() => { isLast ? onComplete() : setSlide(i => i + 1); setAnim(false); }, 400);
   }, [anim, isLast, onComplete]);
 
   const goPrev = useCallback(() => {
     if (anim || slide === 0) return;
+    stopNarration();
     setAnim(true);
     setTimeout(() => { setSlide(i => i - 1); setAnim(false); }, 400);
   }, [anim, slide]);

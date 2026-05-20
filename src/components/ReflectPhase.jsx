@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { numberToWord } from '../utils/numberWords';
-import { speak, sounds } from '../utils/audio';
+import { speak, narrate, stopNarration, sounds } from '../utils/audio';
+import { reflectQuestionNarration, reflectCorrectNarration, reflectConfidenceNarration, reflectCertificateNarration } from '../utils/narration';
 
 const REFLECT_QUESTIONS = [
   { q: "What number comes after 29?", options: [
@@ -51,11 +52,38 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
     }
   }, [showConfetti]);
 
+  // Narrate question text when it changes (NOT the "Reflect" title)
+  useEffect(() => {
+    if (step === 0 && audioEnabled) {
+      narrate(reflectQuestionNarration(REFLECT_QUESTIONS[teachIdx].q), true);
+    }
+    return () => stopNarration();
+  }, [step, teachIdx, audioEnabled]);
+
+  // Narrate confidence step
+  useEffect(() => {
+    if (step === 2 && audioEnabled) {
+      narrate(reflectConfidenceNarration(), true);
+    }
+  }, [step, audioEnabled]);
+
+  // Narrate certificate
+  useEffect(() => {
+    if (step === 3 && audioEnabled) {
+      narrate(reflectCertificateNarration(pct), true);
+    }
+  }, [step, pct, audioEnabled]);
+
   const handleTeachAnswer = useCallback((option) => {
     if (teachAnswered) return;
     setTeachAnswered(true);
-    if (option.correct) { setTeachCorrect(c => c + 1); sounds.correct(); if (audioEnabled) speak('Great job!', true); }
-    else { sounds.wrong(); }
+    if (option.correct) {
+      setTeachCorrect(c => c + 1);
+      sounds.correct();
+      if (audioEnabled) narrate(reflectCorrectNarration(), true);
+    } else {
+      sounds.wrong();
+    }
     setTimeout(() => {
       setTeachAnswered(false);
       if (teachIdx + 1 < REFLECT_QUESTIONS.length) setTeachIdx(i => i + 1);

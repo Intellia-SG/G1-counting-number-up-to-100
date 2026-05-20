@@ -1,3 +1,7 @@
+import { useEffect } from 'react';
+import { narrate, stopNarration } from '../utils/audio';
+import { introNarration } from '../utils/narration';
+
 const JOURNEY_PHASES = [
   { icon: '🔍', label: 'Wonder', desc: 'Spark your curiosity' },
   { icon: '📖', label: 'Story', desc: 'Hear the tale' },
@@ -6,7 +10,14 @@ const JOURNEY_PHASES = [
   { icon: '📓', label: 'Reflect', desc: 'What did you learn?' },
 ];
 
-export default function IntroScreen({ onStart }) {
+export default function IntroScreen({ onStart, audioEnabled }) {
+  useEffect(() => {
+    if (audioEnabled) {
+      narrate(introNarration(), true);
+    }
+    return () => stopNarration();
+  }, [audioEnabled]);
+
   return (
     <div className="intro-screen">
       <div className="intro-badge">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { speak } from '../utils/audio';
+import { narrate, stopNarration } from '../utils/audio';
+import { wonderNarration, wonderDiscoverNarration } from '../utils/narration';
 
 const WONDER_QUESTIONS = [
   {
@@ -55,17 +56,19 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
   useEffect(() => {
     const t1 = setTimeout(() => setStage(1), 800);
     const t2 = setTimeout(() => setStage(2), 2000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t1); clearTimeout(t2); stopNarration(); };
   }, []);
 
+  // Narrate question + subtext (NOT the emoji or title)
   useEffect(() => {
     if (stage === 1 && audioEnabled) {
-      speak(wonder.question, true);
+      narrate(wonderNarration(wonder.question, wonder.subtext), true);
     }
-  }, [stage, wonder.question, audioEnabled]);
+  }, [stage, wonder.question, wonder.subtext, audioEnabled]);
 
   const handleDiscover = useCallback(() => {
-    if (audioEnabled) speak("Let's find out together!", true);
+    stopNarration();
+    if (audioEnabled) narrate(wonderDiscoverNarration(), true);
     setTimeout(() => onComplete(), 600);
   }, [onComplete, audioEnabled]);
 
