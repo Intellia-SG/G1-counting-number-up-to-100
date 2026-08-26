@@ -43,18 +43,7 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
   const pct = totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0;
   const totalStars = Object.values(worldResults).reduce((a, r) => a + (r.stars || 0), 0);
 
-  useEffect(() => {
-    if (showConfetti) {
-      const pieces = Array.from({ length: 40 }, (_, i) => ({
-        id: i, x: Math.random() * 100, delay: Math.random() * 2,
-        color: ['#ffc107', '#e91e63', '#4caf50', '#2196f3', '#ff5722', '#9c27b0'][i % 6],
-        size: 6 + Math.random() * 10, duration: 2 + Math.random() * 3,
-      }));
-      setConfettiPieces(pieces);
-    }
-  }, [showConfetti]);
-
-  // Narrate question text when it changes (NOT the "Reflect" title)
+  // Narrate question text when it changes
   useEffect(() => {
     if (step === 0 && audioEnabled) {
       narrationRef.current?.cancel();
@@ -80,7 +69,7 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
     }
     return () => { narrationRef.current?.cancel(); };
   }, [step, pct, audioEnabled]);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -117,6 +106,12 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
   const handleConfidenceSelect = useCallback((idx) => {
     setConfidence(idx);
     sounds.badge();
+    const pieces = Array.from({ length: 40 }, (_, i) => ({
+      id: i, x: Math.random() * 100, delay: Math.random() * 2,
+      color: ['#ffc107', '#e91e63', '#4caf50', '#2196f3', '#ff5722', '#9c27b0'][i % 6],
+      size: 6 + Math.random() * 10, duration: 2 + Math.random() * 3,
+    }));
+    setConfettiPieces(pieces);
     setShowConfetti(true);
     setTimeout(() => setStep(3), 1000);
   }, []);
@@ -145,7 +140,14 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
             ))}
           </div>
           <div className="reflect-progress">
-            {REFLECT_QUESTIONS.map((_, i) => (<div key={i} className={`reflect-dot ${i === teachIdx ? 'active' : i < teachIdx ? 'done' : ''}`} />))}
+            {REFLECT_QUESTIONS.map((_, i) => (
+              <button
+                key={i}
+                className={`reflect-dot ${i === teachIdx ? 'active' : i < teachIdx ? 'done' : ''}`}
+                onClick={() => setTeachIdx(i)}
+                aria-label={`Question ${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -263,7 +265,7 @@ export default function ReflectPhase({ stats, onRestart, onGoHome, audioEnabled 
           </div>
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginTop: 24 }}>
-          <button className="btn btn-primary btn-lg" onClick={onRestart}>🔄 Play Again</button>
+          <button className="btn btn-primary btn-lg" onClick={onRestart}>🔄 Practice Again</button>
           <button className="btn btn-secondary" onClick={onGoHome}>🏠 Home</button>
         </div>
       </div>

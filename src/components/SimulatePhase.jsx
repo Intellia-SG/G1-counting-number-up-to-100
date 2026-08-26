@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { numberToWord } from '../utils/numberWords';
-import { speak, narrate, stopNarration, sounds } from '../utils/audio';
+import { speak, narrate, stopNarration } from '../utils/audio';
 import { simulateStation1Intro, simulateStation2Intro, simulateStation3Intro, simulateStation4Intro } from '../utils/narration';
 
 const STATIONS = [
@@ -258,9 +258,20 @@ export default function SimulatePhase({ onComplete, audioEnabled }) {
       </div>
       <div className="progress-dots">
         {STATIONS.map((s, i) => (
-          <div key={i} className="simulate-dot-wrapper">
+          <div
+            key={i}
+            className={`simulate-dot-wrapper ${i === station ? 'active' : ''}`}
+            onClick={() => {
+              stopNarration();
+              setStation(i);
+            }}
+            role="button"
+            tabIndex={0}
+            title={s.title}
+            aria-label={`Jump to station ${s.title}`}
+          >
             <div className={`progress-dot ${i === station ? 'active' : i < station ? 'completed' : ''}`} />
-            <span className="simulate-dot-label">{s.icon}</span>
+            <span className="simulate-dot-label">{s.icon} {s.title}</span>
           </div>
         ))}
       </div>

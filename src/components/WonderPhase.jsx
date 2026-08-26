@@ -38,11 +38,9 @@ const WONDER_QUESTIONS = [
 export default function WonderPhase({ onComplete, audioEnabled }) {
   const [wonder] = useState(() => WONDER_QUESTIONS[Math.floor(Math.random() * WONDER_QUESTIONS.length)]);
   const [stage, setStage] = useState(0);
-  const [particles, setParticles] = useState([]);
   const narrationRef = useRef(null);
-
-  useEffect(() => {
-    const p = Array.from({ length: 20 }, (_, i) => ({
+  const [particles] = useState(() =>
+    Array.from({ length: 20 }, (_, i) => ({
       id: i,
       emoji: wonder.bgEmojis[i % wonder.bgEmojis.length],
       x: Math.random() * 100,
@@ -50,9 +48,8 @@ export default function WonderPhase({ onComplete, audioEnabled }) {
       delay: Math.random() * 5,
       duration: 8 + Math.random() * 12,
       size: 1.2 + Math.random() * 1.5,
-    }));
-    setParticles(p);
-  }, [wonder]);
+    }))
+  );
 
   useEffect(() => {
     const t1 = setTimeout(() => setStage(1), 100);

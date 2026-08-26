@@ -1,3 +1,4 @@
+/* global process, Buffer */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,16 +22,16 @@ const getElevenLabsSettings = (style) => {
 const phrases = [
   // IntroScreen — paragraph + mascot speech
   { text: "Ready for a counting adventure?", style: 'encouragement' },
-  { text: "Join Wei Ming on a journey to count numbers 0 to 100 through stories, simulations, and fun games!", style: 'statement' },
+  { text: "Join Karan on a journey to count numbers 0 to 100 through stories, simulations, and fun games!", style: 'statement' },
 
   // StoryPhase — paragraph text (4 slides)
-  { text: "One morning, Wei Ming ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed.", style: 'statement' },
-  { text: "After school, Wei Ming went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Wei Ming was amazed — that is so many! But how do you count to 100?", style: 'statement' },
+  { text: "One morning, Karan ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed.", style: 'statement' },
+  { text: "After school, Karan went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Karan was amazed — that is so many! But how do you count to 100?", style: 'statement' },
   { text: "The next day, his teacher showed the class a trick! Instead of counting one by one, you can skip count! By 2s: 2, 4, 6, 8... By 5s: 5, 10, 15, 20... By 10s: 10, 20, 30... all the way to 100!", style: 'statement' },
-  { text: "Wei Ming was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began...", style: 'statement' },
+  { text: "Karan was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began...", style: 'statement' },
 
   // StoryPhase — mascot speech bubbles
-  { text: "Let's count with Wei Ming! 🔢", style: 'encouragement' },
+  { text: "Let's count with Karan 🔢", style: 'encouragement' },
   { text: "Hmm... how DO you count to 100? 🤔", style: 'thinking' },
   { text: "So THAT's the secret! 💡", style: 'celebration' },
   { text: "Your turn now! 🚀", style: 'encouragement' },
@@ -90,7 +91,7 @@ async function generate() {
         const match = envContent.match(/VITE_ELEVENLABS_API_KEY=(.+)/);
         if (match) apiKey = match[1].trim();
       }
-    } catch (e) { /* ignore */ }
+    } catch { /* ignore */ }
   }
 
   if (!apiKey) {
@@ -123,6 +124,7 @@ async function generate() {
     const voiceSettings = getElevenLabsSettings(p.style);
 
     try {
+      const ttsText = p.text.replace(/\bKaran\b/g, 'Kah-run');
       const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: {
@@ -130,7 +132,7 @@ async function generate() {
           'xi-api-key': apiKey,
         },
         body: JSON.stringify({
-          text: p.text,
+          text: ttsText,
           model_id: 'eleven_multilingual_v2',
           voice_settings: voiceSettings,
         }),
