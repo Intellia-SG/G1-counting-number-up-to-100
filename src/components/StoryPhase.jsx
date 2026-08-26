@@ -6,14 +6,14 @@ const STORY_SLIDES = [
   {
     image: '/images/story_playground.png',
     title: 'Counting at the Playground',
-    text: "One morning, Wei Ming ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed.",
+    text: "One morning, Karan ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed.",
     highlight: '"1, 2, 3, 4, 5, 6, 7, 8, 9, 10!"',
-    mascotText: "Let's count with Wei Ming! 🔢",
+    mascotText: "Let's count with Karan! 🔢",
   },
   {
     image: '/images/story_market.png',
     title: 'The Market Challenge!',
-    text: "After school, Wei Ming went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Wei Ming was amazed — that is so many! But how do you count to 100?",
+    text: "After school, Karan went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Karan was amazed — that is so many! But how do you count to 100?",
     highlight: '"Groups of 10 make counting easy!"',
     mascotText: 'Hmm... how DO you count to 100? 🤔',
   },
@@ -27,7 +27,7 @@ const STORY_SLIDES = [
   {
     image: '/images/story_celebrate.png',
     title: "Let's Count Together!",
-    text: "Wei Ming was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began...",
+    text: "Karan was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began...",
     highlight: '"Numbers 0 to 100 — here we count!"',
     mascotText: 'Your turn now! 🚀',
   },
@@ -53,10 +53,9 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
   }, [slide, audioEnabled]);
 
   useEffect(() => {
-    setTextVis(false); setHlVis(false);
     const t1 = setTimeout(() => setTextVis(true), 100);
     const t2 = setTimeout(() => setHlVis(true), 800);
-    return () => { clearTimeout(t1); clearTimeout(t2); stopNarration(); };
+    return () => { clearTimeout(t1); clearTimeout(t2); setTextVis(false); setHlVis(false); stopNarration(); };
   }, [slide]);
 
   // Narrate paragraph + mascot text (NOT the title)
@@ -102,15 +101,26 @@ export default function StoryPhase({ onComplete, audioEnabled }) {
             <span>✨</span><span className="story-highlight-text">{s.highlight}</span><span>✨</span>
           </div>
           <div className="story-mascot">
-            <div className="mascot" style={{ width: 50, height: 50, fontSize: '1.4rem' }}>🐻</div>
-            <div className="speech-bubble" style={{ fontSize: '0.8rem', padding: '8px 14px', maxWidth: 180 }}>{s.mascotText}</div>
+            <div className="mascot" style={{ width: 60, height: 60, fontSize: '1.8rem' }}>🐻</div>
+            <div className="speech-bubble" style={{ fontSize: '1rem', padding: '10px 16px', maxWidth: 240 }}>{s.mascotText}</div>
           </div>
         </div>
       </div>
       <div className="story-nav">
         <button className="btn btn-outline btn-sm" onClick={goPrev} disabled={slide === 0} style={{ opacity: slide === 0 ? 0.3 : 1 }}>← Back</button>
         <div className="story-dots">
-          {STORY_SLIDES.map((_, i) => (<div key={i} className={`story-dot ${i === slide ? 'active' : i < slide ? 'completed' : ''}`} />))}
+          {STORY_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              className={`story-dot ${i === slide ? 'active' : i < slide ? 'completed' : ''}`}
+              onClick={() => {
+                narrationRef.current?.cancel();
+                stopNarration();
+                setSlide(i);
+              }}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
         </div>
         <button className={`btn ${isLast ? 'btn-green' : 'btn-primary'} btn-sm`} onClick={goNext}>
           {isLast ? "🚀 Let's Explore!" : 'Next →'}

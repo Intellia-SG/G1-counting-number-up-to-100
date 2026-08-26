@@ -4,8 +4,9 @@
 // ──────────────────────────────────────────────────
 
 
+import audioMap from './audioMap.js';
+
 let currentQueue = null;   // active narration queue id
-let isSpeaking = false;
 let currentAudio = null;   // Active HTMLAudioElement for ElevenLabs
 let playId = 0;            // Counter to prevent delayed playback
 const elevenLabsCache = new Map(); // Cache generated audio URLs
@@ -13,52 +14,19 @@ const elevenLabsCache = new Map(); // Cache generated audio URLs
 // New voice ID specified by user (Alice - Clear, Engaging Educator)
 const ELEVENLABS_VOICE_ID = 'Xb7hH8MSUJpSbSDYk0k2';
 
-let audioMap = {};
-try {
-  // Import the generated map if it exists
-  import('./audioMap.js').then(module => {
-    audioMap = module.audioMap || {};
-  }).catch(() => {
-    // Ignore if not present yet
-  });
-} catch (e) { }
-
-
-
 // ─── Speech Types (vary pitch/rate for natural delivery) ──
 // Optimized for young learners (6-8 years old)
-// Higher pitch = More engaging for children
-// Slower rates = Better comprehension and emphasis
 const SPEECH_STYLES = {
-  // Normal teaching voice - warm and conversational
   statement: { rate: 0.85, pitch: 1.18, volume: 0.95 },
-
-  // Questions — higher pitch, slower for emphasis, encourages engagement
   question: { rate: 0.78, pitch: 1.32, volume: 0.98 },
-
-  // Encouragement — warm, upbeat, excited to support learning
   encouragement: { rate: 0.90, pitch: 1.35, volume: 1.0 },
-
-  // Emphasis on key numbers/words — slower, clearer, friendly
   emphasis: { rate: 0.72, pitch: 1.25, volume: 0.98 },
-
-  // Thinking prompt — gentle, inviting, curious
   thinking: { rate: 0.80, pitch: 1.15, volume: 0.92 },
-
-  // Celebration — excited, faster, joyful
   celebration: { rate: 0.98, pitch: 1.42, volume: 1.0 },
-
-  // Gentle instruction — clear and encouraging
   instruction: { rate: 0.82, pitch: 1.20, volume: 0.95 },
 };
 
-
-// Map our pedagogical styles to ElevenLabs emotional settings
 const getElevenLabsSettings = (speechStyle) => {
-  // MAXIMUM HUMANIZATION (optimized for eleven_multilingual_v2):
-  // - Lower stability (~0.20-0.30): Allows natural breathing, vocal fry, and emotive inflection
-  // - Lower similarity_boost (~0.50-0.65): Removes all robotic artifacts and rigidity
-  // - Moderate style (~0.30-0.50): Adds warmth without breaking the voice
   switch (speechStyle) {
     case 'celebration':
       return { stability: 0.12, similarity_boost: 0.45, style: 0.75, use_speaker_boost: true };
@@ -70,20 +38,18 @@ const getElevenLabsSettings = (speechStyle) => {
       return { stability: 0.16, similarity_boost: 0.50, style: 0.60, use_speaker_boost: true };
     case 'thinking':
       return { stability: 0.24, similarity_boost: 0.60, style: 0.35, use_speaker_boost: true };
-    default: // statement, instruction
+    default:
       return { stability: 0.20, similarity_boost: 0.55, style: 0.50, use_speaker_boost: true };
   }
 };
 
 export async function getAudioUrl(text, style) {
-  // 1. Check if we have a pre-generated static audio file for this exact text
+  // 1. Check static audio map first
   if (audioMap && audioMap[text]) {
-    // Return the static asset URL
     return audioMap[text];
   }
 
   const cacheKey = `${text}_${style}`;
-
   if (elevenLabsCache.has(cacheKey)) {
     return elevenLabsCache.get(cacheKey);
   }
@@ -109,25 +75,21 @@ export async function getAudioUrl(text, style) {
     }
 
     if (!response.ok || isHtmlFallback) {
-      throw new Error("Failed to fetch audio from both secure backend and direct fallback.");
+      throw new Error("Failed to fetch audio from server/direct fallback.");
     }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   })();
 
-  // Cache the promise so concurrent requests for the same text don't trigger multiple network calls
   elevenLabsCache.set(cacheKey, fetchPromise);
-
-  // If it fails, remove it from the cache so we can try again later
   fetchPromise.catch(() => elevenLabsCache.delete(cacheKey));
-
   return fetchPromise;
 }
 
 // ─── Core: speak a single text ──────────────────
 export function speak(text, enabled = true, style = 'statement') {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
     if (!enabled || !text) {
       resolve();
       return;
@@ -136,42 +98,54 @@ export function speak(text, enabled = true, style = 'statement') {
     playId++;
     const currentPlayId = playId;
     window.speechSynthesis?.cancel(); // Cancel any fallback speech
-    isSpeaking = true;
 
-    try {
-      const audioUrl = await getAudioUrl(text, style);
+    (async () => {
+      try {
+        const audioUrl = await getAudioUrl(text, style);
 
-      // Check if playback was cancelled while fetching
-      if (currentPlayId !== playId) {
-        isSpeaking = false;
-        resolve();
-        return;
+        if (currentPlayId !== playId) {
+          resolve();
+          return;
+        }
+
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
+
+        currentAudio = new Audio(audioUrl);
+        currentAudio.onended = () => {
+          resolve();
+        };
+        currentAudio.onerror = () => {
+          fallbackSpeech(text, style, resolve);
+        };
+
+        await currentAudio.play();
+      } catch {
+        fallbackSpeech(text, style, resolve);
       }
-
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-      }
-
-      currentAudio = new Audio(audioUrl);
-      currentAudio.onended = () => {
-        isSpeaking = false;
-        resolve();
-      };
-      currentAudio.onerror = () => {
-        isSpeaking = false;
-        resolve();
-      };
-
-      await currentAudio.play();
-      return; // Success, skip fallback
-
-    } catch (error) {
-      console.error("ElevenLabs failed, and fallback is disabled:", error);
-      isSpeaking = false;
-      resolve();
-    }
+    })();
   });
+}
+
+function fallbackSpeech(text, style, resolve) {
+  if (!window.speechSynthesis) {
+    resolve();
+    return;
+  }
+  try {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const styleObj = SPEECH_STYLES[style] || SPEECH_STYLES.statement;
+    utterance.rate = styleObj.rate;
+    utterance.pitch = styleObj.pitch;
+    utterance.volume = styleObj.volume;
+    utterance.onend = () => { resolve(); };
+    utterance.onerror = () => { resolve(); };
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    resolve();
+  }
 }
 
 
@@ -232,7 +206,6 @@ export function narrate(segments, enabled = true) {
     cancelled = true;
     if (currentQueue === queueId) {
       window.speechSynthesis?.cancel();
-      isSpeaking = false;
       currentQueue = null;
     }
   };
@@ -279,7 +252,6 @@ export function stopNarration() {
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
-  isSpeaking = false;
 }
 
 
@@ -302,7 +274,7 @@ export function playTone(frequency, duration = 200) {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration / 1000);
-  } catch (e) { /* silent fallback */ }
+  } catch { /* silent fallback */ }
 }
 
 export const sounds = {

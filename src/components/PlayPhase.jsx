@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { generateQuestionBank } from '../utils/questionBank';
-import { speak, narrate, stopNarration, sounds } from '../utils/audio';
+import { narrate, stopNarration, sounds } from '../utils/audio';
 import { playWorldIntro, playReadQuestion } from '../utils/narration';
 import QuestionRenderer from './QuestionRenderer';
 
@@ -148,7 +148,7 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
     return (
       <div className="play-phase">
         <div className="play-header">
-          <h2 className="play-title">🎮 Play — Choose Your World!</h2>
+          <h2 className="play-title">🎮 Practice — Choose Your World!</h2>
           <p className="play-subtitle">Beat each world to unlock the next one. Earn stars and XP!</p>
           {totalXP > 0 && <div className="play-xp-badge">⭐ {totalXP} XP</div>}
         </div>
@@ -171,7 +171,7 @@ export default function PlayPhase({ onComplete, audioEnabled }) {
                     <span className="world-score">{completed.score}/{completed.total}</span>
                   </div>
                 )}
-                {unlocked && !completed && <div className="world-play-btn">▶ PLAY</div>}
+                {unlocked && !completed && <div className="world-play-btn">▶ PRACTICE</div>}
               </div>
             );
           })}

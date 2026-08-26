@@ -141,7 +141,7 @@ function OrderingRenderer({ question, onAnswer, disabled }) {
 }
 
 // Main Question Renderer
-export default function QuestionRenderer({ question, onAnswer, disabled, showHint }) {
+export default function QuestionRenderer({ question, onAnswer, disabled }) {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleOptionClick = useCallback((option) => {

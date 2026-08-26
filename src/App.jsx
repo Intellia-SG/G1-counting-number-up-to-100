@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { stopNarration } from './utils/audio';
 import IntroScreen from './components/IntroScreen';
 import WonderPhase from './components/WonderPhase';
 import StoryPhase from './components/StoryPhase';
@@ -11,7 +12,7 @@ const PHASES = [
   { id: 'wonder', label: 'Wonder', icon: '🔍', num: '01' },
   { id: 'story', label: 'Story', icon: '📖', num: '02' },
   { id: 'simulate', label: 'Simulate', icon: '🧪', num: '03' },
-  { id: 'play', label: 'Play', icon: '🎮', num: '04' },
+  { id: 'play', label: 'Practice', icon: '🎮', num: '04' },
   { id: 'reflect', label: 'Reflect', icon: '📓', num: '05' },
 ];
 
@@ -50,45 +51,57 @@ export default function App() {
     <>
       <FloatingNumbers />
       <div className="app-container">
-        {/* Audio toggle */}
-        <button
-          onClick={() => setAudioEnabled(a => !a)}
-          className="audio-toggle-btn"
-          aria-label="Toggle audio"
-        >
-          {audioEnabled ? '🔊' : '🔇'}
-        </button>
-
-        {/* Journey progress bar */}
+        {/* Consolidated Navigation Bar — Hidden in intro phase */}
         {phase !== 'intro' && (
-          <div className="journey-bar">
-            {PHASES.map((p, i) => (
-              <div key={p.id} className={`journey-step ${p.id === phase ? 'active' : i < currentPhaseIndex ? 'completed' : ''}`}>
-                <div className="journey-step-dot">
-                  {i < currentPhaseIndex ? '✓' : p.num}
+          <header className="journey-bar">
+            {/* Home button */}
+            <button className="home-btn-nav" onClick={goHome} aria-label="Go home">
+              🏠 Home
+            </button>
+
+            {/* Stepper buttons (All phases unlocked) */}
+            <div className="journey-steps-container">
+              {PHASES.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`journey-step ${p.id === phase ? 'active' : i < currentPhaseIndex ? 'completed' : ''}`}
+                  onClick={() => setPhase(p.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Go to ${p.label} phase`}
+                >
+                  <div className="journey-step-dot">
+                    {i < currentPhaseIndex ? '✓' : p.num}
+                  </div>
+                  <span className="journey-step-label">{p.icon} {p.label}</span>
+                  {i < PHASES.length - 1 && (
+                    <div className={`journey-connector ${i < currentPhaseIndex ? 'filled' : ''}`} />
+                  )}
                 </div>
-                <span className="journey-step-label">{p.icon} {p.label}</span>
-                {i < PHASES.length - 1 && (
-                  <div className={`journey-connector ${i < currentPhaseIndex ? 'filled' : ''}`} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
 
-        {/* Home button */}
-        {phase !== 'intro' && (
-          <button className="home-btn" onClick={goHome} aria-label="Go home">
-            🏠 Home
-          </button>
+            {/* Audio / Mute button beside navbar */}
+            <button
+              onClick={() => {
+                setAudioEnabled(prev => {
+                  const next = !prev;
+                  if (!next) stopNarration();
+                  return next;
+                });
+              }}
+              className="audio-toggle-btn-nav"
+              aria-label="Toggle audio"
+            >
+              {audioEnabled ? '🔊' : '🔇'}
+            </button>
+          </header>
         )}
 
         {/* Phases */}
         {phase === 'intro' && (
           <IntroScreen
             onStart={() => setPhase('wonder')}
-            audioEnabled={audioEnabled}
-            onToggleAudio={() => setAudioEnabled(a => !a)}
           />
         )}
         {phase === 'wonder' && (

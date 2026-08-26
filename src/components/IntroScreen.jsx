@@ -1,30 +1,16 @@
-import { useEffect, useRef } from 'react';
-import { narrate, stopNarration } from '../utils/audio';
-import { introNarration } from '../utils/narration';
-
 const JOURNEY_PHASES = [
   { icon: '🔍', label: 'Wonder', desc: 'Spark your curiosity' },
   { icon: '📖', label: 'Story', desc: 'Hear the tale' },
   { icon: '🧪', label: 'Simulate', desc: 'Explore & discover' },
-  { icon: '🎮', label: 'Play', desc: 'Test your skills' },
+  { icon: '🎮', label: 'Practice', desc: 'Test your skills' },
   { icon: '📓', label: 'Reflect', desc: 'What did you learn?' },
 ];
 
-export default function IntroScreen({ onStart, audioEnabled }) {
-  const narrationRef = useRef(null);
-
-  useEffect(() => {
-    if (audioEnabled) {
-      narrationRef.current?.cancel();
-      narrationRef.current = narrate(introNarration(), true);
-    }
-    return () => { narrationRef.current?.cancel(); stopNarration(); };
-  }, [audioEnabled]);
-
+export default function IntroScreen({ onStart }) {
   return (
     <div className="intro-screen">
       <div className="intro-badge">
-        ✨ Singapore MOE Curriculum · Grade 1
+        ✨ MOE Curriculum · Grade 1
       </div>
 
       <h1 className="intro-title">
@@ -40,7 +26,7 @@ export default function IntroScreen({ onStart, audioEnabled }) {
       </div>
 
       <p className="intro-desc">
-        Join Wei Ming on a journey to count numbers 0–100 through stories, simulations, and fun games!
+        Join Karan on a journey to count numbers 0–100 through stories, simulations, and fun games!
       </p>
 
       <div className="intro-journey-map">

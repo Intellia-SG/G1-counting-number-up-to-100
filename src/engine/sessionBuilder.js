@@ -11,12 +11,9 @@ export function buildSession() {
     while (generated < count) {
       const q = generateQuestion(type);
       
-      let optionsKey = '';
-      if (Array.isArray(q.options)) {
-        optionsKey = [...q.options].sort().join(',');
-      } else {
-        optionsKey = q.options;
-      }
+      const optionsKey = Array.isArray(q.options)
+        ? [...q.options].sort().join(',')
+        : (q.options || '');
       
       const key = `${type}_${q.correctAnswer}_${optionsKey}`;
       

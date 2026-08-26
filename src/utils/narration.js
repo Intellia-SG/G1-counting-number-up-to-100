@@ -3,14 +3,14 @@
 // NO titles are narrated — only content text
 // ──────────────────────────────────────────────────
 
-import { say, ask, cheer, emphasize, think, celebrate, instruct } from './audio';
+import { say, ask, cheer, think, celebrate, instruct } from './audio';
 
 // ─── INTRO SCREEN ────────────────────────────────
 // Narrates: description paragraph + mascot speech (NOT the title)
 export function introNarration() {
   return [
     cheer("Ready for a counting adventure?"),
-    say("Join Wei Ming on a journey to count numbers 0 to 100 through stories, simulations, and fun games!"),
+    say("Join Karan on a journey to count numbers 0 to 100 through stories, simulations, and fun games!"),
   ];
 }
 
@@ -35,12 +35,12 @@ export function getStoryNarration(slideIndex) {
   switch (slideIndex) {
     case 0:
       return [
-        say("One morning, Wei Ming ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed."),
-        cheer("Let's count with Wei Ming! 🔢"),
+        say("One morning, Karan ran to the school playground. His friends were playing hopscotch! He counted the squares: 1, 2, 3... all the way to 10. \"Counting is fun!\" he laughed."),
+        cheer("Let's count with Karan! 🔢"),
       ];
     case 1:
       return [
-        say("After school, Wei Ming went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Wei Ming was amazed — that is so many! But how do you count to 100?"),
+        say("After school, Karan went to the market. The fruit seller had arranged apples in groups of ten. \"I have one hundred apples!\" she said. Karan was amazed — that is so many! But how do you count to 100?"),
         think("Hmm... how DO you count to 100? 🤔"),
       ];
     case 2:
@@ -50,7 +50,7 @@ export function getStoryNarration(slideIndex) {
       ];
     case 3:
       return [
-        say("Wei Ming was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began..."),
+        say("Karan was so excited! Now he could count anything — forwards, backwards, and even by skipping numbers! \"Can we practice more?\" he asked. And so, the counting adventure began..."),
         cheer("Your turn now! 🚀"),
       ];
     default:
